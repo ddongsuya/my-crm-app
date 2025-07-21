@@ -425,13 +425,62 @@ function App() {
         </div>
 
         {/* Gantt 차트 섹션 */}
-        <Card className="p-6">
-          <h3 className="text-lg font-semibold mb-4">Recent Tasks Overview</h3>
-          <GanttChartRenderer
-            tasks={tasks.slice(0, 15)}
-            companies={companies}
-            onTaskClick={(task) => setEditingTask(task)}
-          />
+        <Card className="p-6 flex flex-col lg:flex-row gap-6">
+          <div className="flex-1 min-w-0">
+            <h3 className="text-lg font-semibold mb-4">Recent Tasks Overview</h3>
+            <GanttChartRenderer
+              tasks={tasks.slice(0, 15)}
+              companies={companies}
+              onTaskClick={(task) => setEditingTask(task)}
+            />
+          </div>
+          <div className="flex flex-col gap-4 w-full lg:w-64">
+            {/* 진행중 계약 */}
+            <Card className="p-4 cursor-pointer" onClick={() => setShowOngoingContracts(true)}>
+              <h3 className="font-semibold mb-2 flex items-center"><ClipboardDocumentListIcon className="w-4 h-4 mr-2" />진행중 계약</h3>
+              <div className="text-2xl font-bold mb-2">{(() => {
+                const now = new Date();
+                return companies.flatMap(c => c.contracts || []).filter(ct => isValidDate(ct.contractPeriodStart) && isValidDate(ct.contractPeriodEnd) && new Date(ct.contractPeriodStart!) <= now && new Date(ct.contractPeriodEnd!) >= now).length;
+              })()}건</div>
+              <ul className="text-xs text-gray-600 space-y-1">
+                {companies.flatMap(c => (c.contracts || []).map(ct => ({ ...ct, companyName: c.name }))).filter(ct => isValidDate(ct.contractPeriodStart) && isValidDate(ct.contractPeriodEnd) && new Date(ct.contractPeriodStart!) <= new Date() && new Date(ct.contractPeriodEnd!) >= new Date()).slice(0, 5).map(ct => (
+                  <li key={ct.id}>{ct.companyName} - {ct.contractName} ({ct.contractPeriodStart}~{ct.contractPeriodEnd})</li>
+                ))}
+              </ul>
+            </Card>
+            {/* 완료된 계약 */}
+            <Card className="p-4 cursor-pointer" onClick={() => setShowCompletedContracts(true)}>
+              <h3 className="font-semibold mb-2 flex items-center"><ClipboardDocumentListIcon className="w-4 h-4 mr-2 text-gray-400" />완료된 계약</h3>
+              <div className="text-2xl font-bold mb-2">{(() => {
+                const now = new Date();
+                return companies.flatMap(c => c.contracts || []).filter(ct => isValidDate(ct.contractPeriodEnd) && new Date(ct.contractPeriodEnd!) < now).length;
+              })()}건</div>
+              <ul className="text-xs text-gray-600 space-y-1">
+                {companies.flatMap(c => (c.contracts || []).map(ct => ({ ...ct, companyName: c.name }))).filter(ct => isValidDate(ct.contractPeriodEnd) && new Date(ct.contractPeriodEnd!) < new Date()).slice(0, 5).map(ct => (
+                  <li key={ct.id}>{ct.companyName} - {ct.contractName} ({ct.contractPeriodStart}~{ct.contractPeriodEnd})</li>
+                ))}
+              </ul>
+            </Card>
+            {/* 세금계산서 발행 예정 */}
+            <Card className="p-4 cursor-pointer" onClick={() => setShowInvoiceContracts(true)}>
+              <h3 className="font-semibold mb-2 flex items-center"><ClipboardDocumentListIcon className="w-4 h-4 mr-2 text-blue-500" />세금계산서 발행 예정</h3>
+              <div className="text-2xl font-bold mb-2">{(() => {
+                const now = new Date();
+                const week = new Date(); week.setDate(now.getDate() + 7);
+                return companies.flatMap(c => (c.contracts || []).map(ct => ({ ...ct, companyName: c.name }))).filter(ct => isValidDate(ct.contractSigningDate) && (() => { const d = new Date(ct.contractSigningDate!); d.setDate(d.getDate() + 30); return d >= now && d <= week; })()).length;
+              })()}건</div>
+              <ul className="text-xs text-gray-600 space-y-1">
+                {companies.flatMap(c => (c.contracts || []).map(ct => ({ ...ct, companyName: c.name }))).filter(ct => isValidDate(ct.contractSigningDate) && (() => { const d = new Date(ct.contractSigningDate!); d.setDate(d.getDate() + 30); return d >= new Date() && d <= (() => { const w = new Date(); w.setDate(w.getDate() + 7); return w; })(); })()).slice(0, 5).map(ct => {
+                  let d: Date | null = null;
+                  if (isValidDate(ct.contractSigningDate)) {
+                    d = new Date(ct.contractSigningDate!);
+                    d.setDate(d.getDate() + 30);
+                  }
+                  return <li key={ct.id}>{ct.companyName} - {ct.contractName} (발행예정: {d ? d.toISOString().slice(0, 10) : '-'})</li>;
+                })}
+              </ul>
+            </Card>
+          </div>
         </Card>
 
         {/* 주요 일정 카드 */}
@@ -574,55 +623,6 @@ function App() {
             )}
           </div>
         </Card>
-
-        {/* 대시보드 통계 카드 아래에 계약 관련 카드 추가 */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-6">
-          {/* 진행중 계약 */}
-          <Card className="p-4 cursor-pointer" onClick={() => setShowOngoingContracts(true)}>
-            <h3 className="font-semibold mb-2 flex items-center"><ClipboardDocumentListIcon className="w-4 h-4 mr-2" />진행중 계약</h3>
-            <div className="text-2xl font-bold mb-2">{(() => {
-              const now = new Date();
-              return companies.flatMap(c => c.contracts || []).filter(ct => isValidDate(ct.contractPeriodStart) && isValidDate(ct.contractPeriodEnd) && new Date(ct.contractPeriodStart!) <= now && new Date(ct.contractPeriodEnd!) >= now).length;
-            })()}건</div>
-            <ul className="text-xs text-gray-600 space-y-1">
-              {companies.flatMap(c => (c.contracts || []).map(ct => ({ ...ct, companyName: c.name }))).filter(ct => isValidDate(ct.contractPeriodStart) && isValidDate(ct.contractPeriodEnd) && new Date(ct.contractPeriodStart!) <= new Date() && new Date(ct.contractPeriodEnd!) >= new Date()).slice(0, 5).map(ct => (
-                <li key={ct.id}>{ct.companyName} - {ct.contractName} ({ct.contractPeriodStart}~{ct.contractPeriodEnd})</li>
-              ))}
-            </ul>
-          </Card>
-          {/* 완료된 계약 */}
-          <Card className="p-4 cursor-pointer" onClick={() => setShowCompletedContracts(true)}>
-            <h3 className="font-semibold mb-2 flex items-center"><ClipboardDocumentListIcon className="w-4 h-4 mr-2 text-gray-400" />완료된 계약</h3>
-            <div className="text-2xl font-bold mb-2">{(() => {
-              const now = new Date();
-              return companies.flatMap(c => c.contracts || []).filter(ct => isValidDate(ct.contractPeriodEnd) && new Date(ct.contractPeriodEnd!) < now).length;
-            })()}건</div>
-            <ul className="text-xs text-gray-600 space-y-1">
-              {companies.flatMap(c => (c.contracts || []).map(ct => ({ ...ct, companyName: c.name }))).filter(ct => isValidDate(ct.contractPeriodEnd) && new Date(ct.contractPeriodEnd!) < new Date()).slice(0, 5).map(ct => (
-                <li key={ct.id}>{ct.companyName} - {ct.contractName} ({ct.contractPeriodStart}~{ct.contractPeriodEnd})</li>
-              ))}
-            </ul>
-          </Card>
-          {/* 세금계산서 발행 예정 */}
-          <Card className="p-4 cursor-pointer" onClick={() => setShowInvoiceContracts(true)}>
-            <h3 className="font-semibold mb-2 flex items-center"><ClipboardDocumentListIcon className="w-4 h-4 mr-2 text-blue-500" />세금계산서 발행 예정</h3>
-            <div className="text-2xl font-bold mb-2">{(() => {
-              const now = new Date();
-              const week = new Date(); week.setDate(now.getDate() + 7);
-              return companies.flatMap(c => (c.contracts || []).map(ct => ({ ...ct, companyName: c.name }))).filter(ct => isValidDate(ct.contractSigningDate) && (() => { const d = new Date(ct.contractSigningDate!); d.setDate(d.getDate() + 30); return d >= now && d <= week; })()).length;
-            })()}건</div>
-            <ul className="text-xs text-gray-600 space-y-1">
-              {companies.flatMap(c => (c.contracts || []).map(ct => ({ ...ct, companyName: c.name }))).filter(ct => isValidDate(ct.contractSigningDate) && (() => { const d = new Date(ct.contractSigningDate!); d.setDate(d.getDate() + 30); return d >= new Date() && d <= (() => { const w = new Date(); w.setDate(w.getDate() + 7); return w; })(); })()).slice(0, 5).map(ct => {
-                let d: Date | null = null;
-                if (isValidDate(ct.contractSigningDate)) {
-                  d = new Date(ct.contractSigningDate!);
-                  d.setDate(d.getDate() + 30);
-                }
-                return <li key={ct.id}>{ct.companyName} - {ct.contractName} (발행예정: {d ? d.toISOString().slice(0, 10) : '-'})</li>;
-              })}
-            </ul>
-          </Card>
-        </div>
       </div>
     );
   };
@@ -1555,193 +1555,35 @@ function App() {
   const [notesDraftMap, setNotesDraftMap] = useState<{ [companyId: string]: string }>({});
   const [notesSavedMap, setNotesSavedMap] = useState<{ [companyId: string]: boolean }>({});
 
+  // 사이드바 상태
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* 헤더 */}
-      <header className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center space-x-8">
-              <h1 className="text-xl font-semibold text-gray-900">CRM 시스템</h1>
-
-              <nav className="flex space-x-8">
-                <button
-                  onClick={() => setView({ type: 'dashboard' })}
-                  className={`flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium ${view.type === 'dashboard'
-                    ? 'bg-gray-100 text-gray-900'
-                    : 'text-gray-500 hover:text-gray-700'
-                    }`}
-                >
-                  <DashboardIcon className="w-4 h-4" />
-                  <span>대시보드</span>
-                </button>
-
-                <button
-                  onClick={() => setView({ type: 'clientList' })}
-                  className={`flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium ${view.type === 'clientList'
-                    ? 'bg-gray-100 text-gray-900'
-                    : 'text-gray-500 hover:text-gray-700'
-                    }`}
-                >
-                  <ClientsIcon className="w-4 h-4" />
-                  <span>고객사</span>
-                </button>
-
-                <button
-                  onClick={() => setView({ type: 'calendar' })}
-                  className={`flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium ${view.type === 'calendar'
-                    ? 'bg-gray-100 text-gray-900'
-                    : 'text-gray-500 hover:text-gray-700'
-                    }`}
-                >
-                  <CalendarDaysIcon className="w-4 h-4" />
-                  <span>캘린더</span>
-                </button>
-
-                <button
-                  onClick={() => setView({ type: 'analytics' })}
-                  className={`flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium ${view.type === 'analytics'
-                    ? 'bg-gray-100 text-gray-900'
-                    : 'text-gray-500 hover:text-gray-700'
-                    }`}
-                >
-                  <ChartBarIcon className="w-4 h-4" />
-                  <span>분석</span>
-                </button>
-              </nav>
-            </div>
-
-            <div className="flex items-center space-x-4">
-              <Button variant="ghost" onClick={() => setShowNotificationPanel(v => !v)} className="relative p-1">
-                <BellIcon className="w-6 h-6 text-slate-600" />
-                {unreadCount > 0 && (
-                  <span className="absolute top-0 right-0 block h-2 w-2 rounded-full ring-2 ring-white bg-red-500" />
-                )}
-              </Button>
-              {showNotificationPanel && (
-                <Card className="absolute right-0 mt-2 w-72 sm:w-80 z-20 max-h-96 overflow-y-auto">
-                  <div className="flex justify-between items-center mb-2">
-                    <h3 className="font-semibold text-dark-text">알림</h3>
-                    {unreadCount > 0 && <span className="text-xs bg-red-500 text-white px-2 py-0.5 rounded-full">{unreadCount}개</span>}
-                  </div>
-                  {notifications.length === 0 ? (
-                    <p className="text-sm text-center text-gray-500 py-4">알림이 없습니다.</p>
-                  ) : (
-                    <ul className="space-y-2">
-                      {notifications
-                        .slice()
-                        .sort((a, b) => {
-                          if (a.isRead !== b.isRead) return a.isRead ? 1 : -1;
-                          return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
-                        })
-                        .map(n => (
-                          <li key={n.id} className={`p-2 rounded ${n.isRead ? 'bg-slate-100 opacity-70' : 'bg-yellow-50'} border-l-4 ${n.type === 'warning' ? 'border-yellow-400' : 'border-blue-400'}`}>
-                            <p className="text-sm text-medium-text">{n.message}</p>
-                            {!n.isRead && (
-                              <Button size="sm" variant="ghost" className="text-xs mt-1" onClick={() => markNotificationAsRead(n.id)}>읽음</Button>
-                            )}
-                          </li>
-                        ))}
-                    </ul>
-                  )}
-                </Card>
-              )}
-
-              <div className="relative">
-                <button className="flex items-center space-x-2 text-sm text-gray-700 hover:text-gray-900">
-                  <UserCircleIcon className="w-6 h-6" />
-                  <span>관리자</span>
-                  <ChevronDownIcon className="w-4 h-4" />
-                </button>
-              </div>
-            </div>
-          </div>
+    <div className="flex min-h-screen bg-gray-50">
+      {/* 사이드 네비게이션 */}
+      <aside className={`fixed md:static z-30 top-0 left-0 h-full w-48 md:w-56 lg:w-64 bg-white border-r flex flex-col transition-transform duration-200 md:translate-x-0 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0`} style={{backgroundColor: '#fff'}}>
+        <div className="h-16 flex items-center justify-center font-bold text-xl border-b" style={{color: '#1a237e'}}>CRM</div>
+        <nav className="flex-1 flex flex-col items-center gap-2 py-6">
+          <button onClick={() => setView({ type: 'dashboard' })} className={`w-16 h-16 flex items-center justify-center rounded-lg transition-colors ${view.type === 'dashboard' ? 'bg-[#1a237e] text-white' : 'text-[#1a237e] hover:bg-[#e3e7f7]'}`}> <DashboardIcon className="w-12 h-12" /> </button>
+          <button onClick={() => setView({ type: 'clientList' })} className={`w-16 h-16 flex items-center justify-center rounded-lg transition-colors ${view.type === 'clientList' ? 'bg-[#ff9800] text-white' : 'text-[#ff9800] hover:bg-orange-100'}`}> <ClientsIcon className="w-12 h-12" /> </button>
+          <button onClick={() => setView({ type: 'calendar' })} className={`w-16 h-16 flex items-center justify-center rounded-lg transition-colors ${view.type === 'calendar' ? 'bg-[#1a237e] text-white' : 'text-[#1a237e] hover:bg-[#e3e7f7]'}`}> <CalendarDaysIcon className="w-12 h-12" /> </button>
+          <button onClick={() => setView({ type: 'analytics' })} className={`w-16 h-16 flex items-center justify-center rounded-lg transition-colors ${view.type === 'analytics' ? 'bg-[#ff9800] text-white' : 'text-[#ff9800] hover:bg-orange-100'}`}> <ChartBarIcon className="w-12 h-12" /> </button>
+        </nav>
+        <div className="flex flex-col items-center gap-2 p-4 border-t mt-auto">
+          <button className="w-12 h-12 flex items-center justify-center rounded-full text-[#1a237e] hover:bg-[#e3e7f7]"> <UserCircleIcon className="w-8 h-8" /> </button>
+          <button className="w-12 h-12 flex items-center justify-center rounded-full text-[#ff9800] hover:bg-orange-100"> <Bars3Icon className="w-8 h-8" /> </button>
         </div>
-      </header>
-
+      </aside>
+      {/* 모바일 햄버거 버튼 */}
+      <button className="fixed top-4 left-4 z-40 md:hidden bg-white border rounded-full p-2 shadow" onClick={() => setSidebarOpen(v => !v)}>
+        <Bars3Icon className="w-6 h-6 text-[#1a237e]" />
+      </button>
       {/* 메인 컨텐츠 */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {renderContent()}
+      <main className="flex-1 ml-0 pl-6 md:pl-8 lg:pl-10 transition-all duration-200">
+        <div className="px-4 sm:px-6 lg:px-8 py-8"> {/* 좌우 패딩만 추가, 최대 너비 제한 없음 */}
+          {renderContent()}
+        </div>
       </main>
-
-      {/* 모달들 */}
-      {showCompanyModal && (
-        <Modal
-          isOpen={showCompanyModal}
-          onClose={() => {
-            setShowCompanyModal(false);
-            setEditingCompany(null);
-          }}
-          title={editingCompany ? '고객사 수정' : '새 고객사 추가'}
-        >
-          <CompanyForm
-            company={editingCompany}
-            onSubmit={editingCompany
-              ? (data) => handleUpdateCompany(editingCompany.id, data)
-              : handleCreateCompany
-            }
-            onCancel={() => {
-              setShowCompanyModal(false);
-              setEditingCompany(null);
-            }}
-          />
-        </Modal>
-      )}
-
-      {showNotificationModal && (
-        <Modal
-          isOpen={showNotificationModal}
-          onClose={() => setShowNotificationModal(false)}
-          title="알림"
-        >
-          <div className="space-y-4">
-            {notifications.length === 0 ? (
-              <p className="text-gray-500">알림이 없습니다.</p>
-            ) : (
-              notifications.map(notification => (
-                <div key={notification.id} className="p-4 border rounded-lg">
-                  <p className="text-sm">{notification.message}</p>
-                  <p className="text-xs text-gray-500 mt-1">{notification.createdAt}</p>
-                </div>
-              ))
-            )}
-          </div>
-        </Modal>
-      )}
-
-      {/* 각 모달 구현 */}
-      <Modal isOpen={showOngoingContracts} onClose={() => setShowOngoingContracts(false)} title="진행중 계약 전체 목록">
-        <ul className="space-y-2">
-          {companies.flatMap(c => (c.contracts || []).map(ct => ({ ...ct, companyName: c.name }))).filter(ct => isValidDate(ct.contractPeriodStart) && isValidDate(ct.contractPeriodEnd) && new Date(ct.contractPeriodStart!) <= new Date() && new Date(ct.contractPeriodEnd!) >= new Date()).map(ct => (
-            <li key={ct.id} className="border-b py-2">
-              <b>{ct.companyName}</b> - {ct.contractName} ({ct.contractPeriodStart}~{ct.contractPeriodEnd})
-            </li>
-          ))}
-        </ul>
-      </Modal>
-      <Modal isOpen={showCompletedContracts} onClose={() => setShowCompletedContracts(false)} title="완료된 계약 전체 목록">
-        <ul className="space-y-2">
-          {companies.flatMap(c => (c.contracts || []).map(ct => ({ ...ct, companyName: c.name }))).filter(ct => isValidDate(ct.contractPeriodEnd) && new Date(ct.contractPeriodEnd!) < new Date()).map(ct => (
-            <li key={ct.id} className="border-b py-2">
-              <b>{ct.companyName}</b> - {ct.contractName} ({ct.contractPeriodStart}~{ct.contractPeriodEnd})
-            </li>
-          ))}
-        </ul>
-      </Modal>
-      <Modal isOpen={showInvoiceContracts} onClose={() => setShowInvoiceContracts(false)} title="세금계산서 발행 예정 전체 목록">
-        <ul className="space-y-2">
-          {companies.flatMap(c => (c.contracts || []).map(ct => ({ ...ct, companyName: c.name }))).filter(ct => isValidDate(ct.contractSigningDate) && (() => { const d = new Date(ct.contractSigningDate!); d.setDate(d.getDate() + 30); return d >= new Date() && d <= (() => { const w = new Date(); w.setDate(w.getDate() + 7); return w; })(); })()).map(ct => {
-            let d: Date | null = null;
-            if (isValidDate(ct.contractSigningDate)) {
-              d = new Date(ct.contractSigningDate!);
-              d.setDate(d.getDate() + 30);
-            }
-            return <li key={ct.id} className="border-b py-2">
-              <b>{ct.companyName}</b> - {ct.contractName} (발행예정: {d ? d.toISOString().slice(0, 10) : '-'})
-            </li>;
-          })}
-        </ul>
-      </Modal>
     </div>
   );
 }
