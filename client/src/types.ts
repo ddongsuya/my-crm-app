@@ -97,7 +97,8 @@ export type View =
   | { type: 'calendar' }
   | { type: 'analytics' }
   | { type: 'dataExport' }
-  | { type: 'settings' };
+  | { type: 'settings' }
+  | { type: 'admin' };
 
 export interface NotificationItem {
   id: string;
@@ -105,5 +106,13 @@ export interface NotificationItem {
   type: 'info' | 'warning' | 'error';
   relatedId?: string;
   isRead: boolean;
+  createdAt: string;
+}
+
+export type UserRole = 'admin' | 'user';
+export interface User {
+  id: string;
+  username: string;
+  role: UserRole;
   createdAt: string;
 } 

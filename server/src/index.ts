@@ -1,8 +1,18 @@
 import express from 'express';
 import cors from 'cors';
 import bodyParser from 'body-parser';
-import { db, Company, Meeting, Task } from './data';
+import { db, Company, Meeting, Task, User, UserRole } from './data';
 import { randomUUID } from 'crypto';
+import jwt from 'jsonwebtoken';
+import bcrypt from 'bcryptjs';
+import { Request, Response, NextFunction } from 'express';
+
+// req.user 타입 확장
+interface AuthRequest extends Request {
+  user?: any;
+}
+
+const JWT_SECRET = 'your_jwt_secret_key'; // 실제 운영시 .env로 분리 권장
 
 const app = express();
 const PORT = 4000;
@@ -118,6 +128,53 @@ app.delete('/api/tasks/:id', (req, res) => {
   db.tasks.splice(idx, 1);
   res.status(204).end();
 });
+
+// 회원가입
+app.post('/api/auth/register', async (req, res) => {
+  const { username, password, role } = req.body;
+  if (!username || !password) return res.status(400).json({ error: 'username, password required' });
+  if (db.users.find(u => u.username === username)) return res.status(409).json({ error: 'username already exists' });
+  const passwordHash = await bcrypt.hash(password, 10);
+  const user: User = {
+    id: randomUUID(),
+    username,
+    passwordHash,
+    role: role === 'admin' ? 'admin' : 'user',
+    createdAt: new Date().toISOString(),
+  };
+  db.users.push(user);
+  res.status(201).json({ id: user.id, username: user.username, role: user.role, createdAt: user.createdAt });
+});
+
+// 로그인
+app.post('/api/auth/login', async (req, res) => {
+  const { username, password } = req.body;
+  const user = db.users.find(u => u.username === username);
+  if (!user) return res.status(401).json({ error: 'Invalid credentials' });
+  const valid = await bcrypt.compare(password, user.passwordHash);
+  if (!valid) return res.status(401).json({ error: 'Invalid credentials' });
+  const token = jwt.sign({ userId: user.id, username: user.username, role: user.role }, JWT_SECRET, { expiresIn: '7d' });
+  res.json({ token, user: { id: user.id, username: user.username, role: user.role, createdAt: user.createdAt } });
+});
+
+// 내 정보 조회 (로그인 필요)
+app.get('/api/auth/me', authenticateToken, (req: AuthRequest, res: Response) => {
+  const user = db.users.find(u => u.id === req.user?.userId);
+  if (!user) return res.status(404).json({ error: 'User not found' });
+  res.json({ id: user.id, username: user.username, role: user.role, createdAt: user.createdAt });
+});
+
+// JWT 인증 미들웨어
+function authenticateToken(req: AuthRequest, res: Response, next: NextFunction) {
+  const authHeader = req.headers['authorization'];
+  const token = authHeader && authHeader.split(' ')[1];
+  if (!token) return res.status(401).json({ error: 'No token' });
+  jwt.verify(token, JWT_SECRET, (err: any, user: any) => {
+    if (err) return res.status(403).json({ error: 'Invalid token' });
+    req.user = user;
+    next();
+  });
+}
 
 app.listen(PORT, () => {
   console.log(`Server listening on port ${PORT}`);

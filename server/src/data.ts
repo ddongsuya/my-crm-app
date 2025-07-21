@@ -92,9 +92,34 @@ export interface Task {
   assignee?: string;
 }
 
+export type UserRole = 'admin' | 'user';
+export interface User {
+  id: string;
+  username: string;
+  passwordHash: string;
+  role: UserRole;
+  createdAt: string;
+}
+
 // 메모리 데이터베이스
 export const db = {
   companies: [] as Company[],
   meetings: [] as Meeting[],
   tasks: [] as Task[],
-}; 
+  users: [] as User[],
+};
+// 서버 시작 시 admin 계정이 없으면 자동 추가
+import bcrypt from 'bcryptjs';
+(async () => {
+  const adminExists = db.users.some(u => u.username === 'admin');
+  if (!adminExists) {
+    const passwordHash = await bcrypt.hash('admin0202', 10);
+    db.users.push({
+      id: 'admin-uuid',
+      username: 'admin',
+      passwordHash,
+      role: 'admin',
+      createdAt: new Date().toISOString(),
+    });
+  }
+})(); 

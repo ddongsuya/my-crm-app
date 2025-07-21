@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, ReactNode, ReactElement } from 'react';
-import { Company, Meeting, Task, TaskStatus, View, NotificationItem, Contact, Quotation, Contract, Study } from './types';
+import { Company, Meeting, Task, TaskStatus, View, NotificationItem, Contact, Quotation, Contract, Study, User } from './types';
 import {
   Button, Card, Input, Textarea, Select, Modal, CompanyForm, MeetingForm, TaskForm, GanttChartRenderer, StatCard, UpcomingItemCard, QuotationForm, ContractForm
 } from './components';
@@ -136,6 +136,35 @@ const api = {
         method: 'DELETE'
       });
     }
+  }
+};
+
+// 인증 관련 API
+const apiAuth = {
+  login: async (username: string, password: string) => {
+    const res = await fetch('http://localhost:4000/api/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, password })
+    });
+    if (!res.ok) throw new Error((await res.json()).error || 'Login failed');
+    return res.json();
+  },
+  register: async (username: string, password: string) => {
+    const res = await fetch('http://localhost:4000/api/auth/register', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, password })
+    });
+    if (!res.ok) throw new Error((await res.json()).error || 'Register failed');
+    return res.json();
+  },
+  fetchMe: async (token: string) => {
+    const res = await fetch('http://localhost:4000/api/auth/me', {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    if (!res.ok) throw new Error('Not authenticated');
+    return res.json();
   }
 };
 
@@ -1440,70 +1469,305 @@ function App() {
     );
   };
 
-  // 설정 렌더링
-  const renderSettings = () => {
-    // 테마 상태(라이트/다크)
+  // SettingsView 컴포넌트 분리
+  const SettingsView: React.FC<{ handleLogout: () => void; authUser: User | null }> = ({ handleLogout, authUser }) => {
+    const [tab, setTab] = useState<'profile' | 'settings' | 'guide'>('profile');
+    const [user, setUser] = useState({ name: authUser?.username || '', username: authUser?.username || '' });
+    const [editUser, setEditUser] = useState(user);
+    const [editing, setEditing] = useState(false);
     const [theme, setTheme] = useState<'light' | 'dark'>(localStorage.getItem('theme') === 'dark' ? 'dark' : 'light');
     useEffect(() => {
       document.documentElement.classList.toggle('dark', theme === 'dark');
       localStorage.setItem('theme', theme);
     }, [theme]);
-
-    // 사용자 정보(예시)
-    const [user, setUser] = useState({ name: '홍길동', email: 'user@example.com' });
-    const [editUser, setEditUser] = useState(user);
-    const [editing, setEditing] = useState(false);
-
-    // 기타 환경설정(알림, 언어)
     const [notificationsEnabled, setNotificationsEnabled] = useState(true);
     const [language, setLanguage] = useState('ko');
-
+    const [profileImage, setProfileImage] = useState<string | null>(null);
+    const handleProfileImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = ev => setProfileImage(ev.target?.result as string);
+        reader.readAsDataURL(file);
+      }
+    };
+    // 비밀번호 변경 모달 상태
+    const [showPwModal, setShowPwModal] = useState(false);
+    const [pwForm, setPwForm] = useState({ current: '', next: '', confirm: '' });
+    const [pwError, setPwError] = useState<string | null>(null);
+    const handlePwChange = (e: React.FormEvent) => {
+      e.preventDefault();
+      setPwError(null);
+      if (!pwForm.current || !pwForm.next || !pwForm.confirm) {
+        setPwError('모든 항목을 입력하세요.'); return;
+      }
+      if (pwForm.next !== pwForm.confirm) {
+        setPwError('새 비밀번호가 일치하지 않습니다.'); return;
+      }
+      alert('비밀번호가 변경되었습니다. (실제 저장은 추후 구현)');
+      setShowPwModal(false);
+      setPwForm({ current: '', next: '', confirm: '' });
+    };
     return (
       <div className="max-w-xl mx-auto space-y-8">
         <h2 className="text-2xl font-bold mb-4">설정</h2>
-        {/* 테마 설정 */}
-        <Card className="p-6 flex flex-col gap-2">
-          <div className="font-semibold mb-2">테마</div>
-          <div className="flex gap-4 items-center">
-            <Button variant={theme === 'light' ? 'primary' : 'secondary'} onClick={() => setTheme('light')}>라이트</Button>
-            <Button variant={theme === 'dark' ? 'primary' : 'secondary'} onClick={() => setTheme('dark')}>다크</Button>
-          </div>
-        </Card>
-        {/* 사용자 정보 */}
-        <Card className="p-6 flex flex-col gap-2">
-          <div className="font-semibold mb-2">사용자 정보</div>
-          {editing ? (
-            <div className="flex flex-col gap-2">
-              <Input value={editUser.name} onChange={e => setEditUser({ ...editUser, name: e.target.value })} />
-              <Input value={editUser.email} onChange={e => setEditUser({ ...editUser, email: e.target.value })} />
-              <div className="flex gap-2">
-                <Button variant="primary" onClick={() => { setUser(editUser); setEditing(false); }}>저장</Button>
-                <Button variant="ghost" onClick={() => { setEditUser(user); setEditing(false); }}>취소</Button>
+        {/* 탭 네비게이션 */}
+        <div className="flex gap-4 border-b mb-6">
+          <button className={`px-4 py-2 font-semibold border-b-2 ${tab === 'profile' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500'}`} onClick={() => setTab('profile')}>프로필</button>
+          <button className={`px-4 py-2 font-semibold border-b-2 ${tab === 'settings' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500'}`} onClick={() => setTab('settings')}>환경설정</button>
+          <button className={`px-4 py-2 font-semibold border-b-2 ${tab === 'guide' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500'}`} onClick={() => setTab('guide')}>설명서</button>
+        </div>
+        {tab === 'profile' && (
+          <Card className="p-6 flex flex-col gap-4 items-center">
+            <div className="flex flex-col items-center gap-2">
+              <div className="w-24 h-24 rounded-full bg-gray-200 overflow-hidden flex items-center justify-center mb-2">
+                {profileImage ? (
+                  <img src={profileImage} alt="프로필" className="w-full h-full object-cover" />
+                ) : (
+                  <UserCircleIcon className="w-20 h-20 text-gray-400" />
+                )}
               </div>
+              <input type="file" accept="image/*" onChange={handleProfileImageChange} className="text-sm" />
             </div>
-          ) : (
-            <div className="flex flex-col gap-2">
-              <div>이름: {user.name}</div>
-              <div>이메일: {user.email}</div>
-              <Button variant="ghost" onClick={() => setEditing(true)}>수정</Button>
+            {editing ? (
+              <div className="flex flex-col gap-2 w-full">
+                <Input value={editUser.name} onChange={e => setEditUser({ ...editUser, name: e.target.value })} />
+                <Input value={editUser.username} onChange={e => setEditUser({ ...editUser, username: e.target.value })} />
+                <div className="flex gap-2">
+                  <Button variant="primary" onClick={() => { setUser(editUser); setEditing(false); }}>저장</Button>
+                  <Button variant="ghost" onClick={() => { setEditUser(user); setEditing(false); }}>취소</Button>
+                </div>
+              </div>
+            ) : (
+              <div className="flex flex-col gap-2 w-full">
+                <div>이름: {user.name}</div>
+                <div>아이디(이메일): {user.username}</div>
+                <Button variant="ghost" onClick={() => setEditing(true)}>수정</Button>
+              </div>
+            )}
+            <div className="flex flex-col gap-2 w-full mt-4">
+              <Button variant="secondary" onClick={() => setShowPwModal(true)}>비밀번호 변경</Button>
+              <Button variant="ghost" onClick={handleLogout}>로그아웃</Button>
             </div>
-          )}
-        </Card>
-        {/* 기타 환경설정 */}
-        <Card className="p-6 flex flex-col gap-2">
-          <div className="font-semibold mb-2">환경설정</div>
-          <div className="flex items-center gap-2">
-            <input type="checkbox" checked={notificationsEnabled} onChange={e => setNotificationsEnabled(e.target.checked)} id="noti" />
-            <label htmlFor="noti" className="text-sm">알림 받기</label>
+            {/* 비밀번호 변경 모달 */}
+            {showPwModal && (
+              <Modal isOpen={showPwModal} onClose={() => setShowPwModal(false)} title="비밀번호 변경">
+                <form onSubmit={handlePwChange} className="space-y-4">
+                  <Input type="password" placeholder="기존 비밀번호" value={pwForm.current} onChange={e => setPwForm(f => ({ ...f, current: e.target.value }))} />
+                  <Input type="password" placeholder="새 비밀번호" value={pwForm.next} onChange={e => setPwForm(f => ({ ...f, next: e.target.value }))} />
+                  <Input type="password" placeholder="새 비밀번호 확인" value={pwForm.confirm} onChange={e => setPwForm(f => ({ ...f, confirm: e.target.value }))} />
+                  {pwError && <div className="text-red-500 text-sm">{pwError}</div>}
+                  <div className="flex gap-2 justify-end">
+                    <Button type="button" variant="ghost" onClick={() => setShowPwModal(false)}>취소</Button>
+                    <Button type="submit" variant="primary">변경</Button>
+                  </div>
+                </form>
+              </Modal>
+            )}
+          </Card>
+        )}
+        {tab === 'settings' && (
+          <Card className="p-6 flex flex-col gap-2">
+            <div className="font-semibold mb-2">테마</div>
+            <div className="flex gap-4 items-center">
+              <Button variant={theme === 'light' ? 'primary' : 'secondary'} onClick={() => setTheme('light')}>라이트</Button>
+              <Button variant={theme === 'dark' ? 'primary' : 'secondary'} onClick={() => setTheme('dark')}>다크</Button>
+            </div>
+            <div className="font-semibold mt-6 mb-2">환경설정</div>
+            <div className="flex items-center gap-2">
+              <input type="checkbox" checked={notificationsEnabled} onChange={e => setNotificationsEnabled(e.target.checked)} id="noti" />
+              <label htmlFor="noti" className="text-sm">알림 받기</label>
+            </div>
+            <div className="flex items-center gap-2 mt-2">
+              <label htmlFor="lang" className="text-sm">언어</label>
+              <Select value={language} onChange={e => setLanguage(e.target.value)} className="w-32">
+                <option value="ko">한국어</option>
+                <option value="en">English</option>
+              </Select>
+            </div>
+          </Card>
+        )}
+        {tab === 'guide' && (
+          <Card className="p-6">
+            <div className="font-semibold mb-2">프로그램 설명서</div>
+            <ul className="list-disc ml-6 text-sm text-gray-700 space-y-1">
+              <li>고객사, 미팅, 태스크, 계약, 연구 등 CRM 주요 기능 사용법 안내</li>
+              <li>좌측 사이드바에서 각 메뉴를 클릭해 이동</li>
+              <li>관리자 메뉴에서 유저 및 데이터 관리 가능 (관리자만 노출)</li>
+              <li>설정 메뉴에서 프로필, 테마, 알림 등 환경설정 가능</li>
+              <li>데이터 내보내기 메뉴에서 CSV로 데이터 백업 가능</li>
+              <li>기타 문의는 관리자에게 연락</li>
+            </ul>
+          </Card>
+        )}
+      </div>
+    );
+  };
+
+  // AdminView 컴포넌트 분리
+  const AdminView: React.FC<{ companies: Company[]; meetings: Meeting[]; tasks: Task[] }> = ({ companies, meetings, tasks }) => {
+    const [tab, setTab] = useState<'users' | 'data'>('users');
+    // 임시 유저 데이터 상태
+    const [users, setUsers] = useState([
+      { id: '1', username: 'admin', role: 'admin', createdAt: '2024-01-01' },
+      { id: '2', username: 'user1', role: 'user', createdAt: '2024-02-01' },
+      { id: '3', username: 'user2', role: 'user', createdAt: '2024-03-01' },
+    ]);
+    // 권한 변경 핸들러
+    const handleToggleRole = (id: string) => {
+      setUsers(prev => prev.map(u => u.id === id ? { ...u, role: u.role === 'admin' ? 'user' : 'admin' } : u));
+      alert('권한이 변경되었습니다. (실제 저장은 추후 구현)');
+    };
+    // 삭제 핸들러
+    const handleDeleteUser = (id: string) => {
+      setUsers(prev => prev.filter(u => u.id !== id));
+      alert('유저가 삭제되었습니다. (실제 삭제는 추후 구현)');
+    };
+    // 유저 추가 핸들러
+    const handleAddUser = () => {
+      const username = prompt('추가할 유저 아이디(이메일)를 입력하세요:');
+      if (!username) return;
+      setUsers(prev => [...prev, { id: Date.now().toString(), username, role: 'user', createdAt: new Date().toISOString().slice(0, 10) }]);
+      alert('유저가 추가되었습니다. (실제 저장은 추후 구현)');
+    };
+    return (
+      <div className="max-w-3xl mx-auto space-y-8">
+        <h2 className="text-2xl font-bold mb-4">관리자 메뉴</h2>
+        <div className="flex gap-4 border-b mb-6">
+          <button className={`px-4 py-2 font-semibold border-b-2 ${tab === 'users' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500'}`} onClick={() => setTab('users')}>유저 관리</button>
+          <button className={`px-4 py-2 font-semibold border-b-2 ${tab === 'data' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500'}`} onClick={() => setTab('data')}>데이터 관리</button>
+        </div>
+        {tab === 'users' && (
+          <div className="space-y-4">
+            <div className="flex justify-between items-center mb-2">
+              <div className="font-semibold text-lg">유저 목록</div>
+              <Button variant="primary" onClick={handleAddUser}>+ 유저 추가</Button>
+            </div>
+            <table className="min-w-full bg-white border rounded-lg shadow-sm text-sm">
+              <thead>
+                <tr className="bg-gray-50 text-gray-700">
+                  <th className="px-4 py-2 text-left">아이디(이메일)</th>
+                  <th className="px-4 py-2 text-left">권한</th>
+                  <th className="px-4 py-2 text-left">생성일</th>
+                  <th className="px-4 py-2 text-center">관리</th>
+                </tr>
+              </thead>
+              <tbody>
+                {users.length === 0 ? (
+                  <tr><td colSpan={4} className="text-center text-gray-400 py-8">유저가 없습니다.</td></tr>
+                ) : (
+                  users.map(u => (
+                    <tr key={u.id} className="hover:bg-blue-50 transition">
+                      <td className="px-4 py-2 whitespace-nowrap">{u.username}</td>
+                      <td className="px-4 py-2 whitespace-nowrap">{u.role}</td>
+                      <td className="px-4 py-2 whitespace-nowrap">{u.createdAt}</td>
+                      <td className="px-4 py-2 text-center">
+                        <div className="flex gap-2 justify-center">
+                          <Button variant="ghost" size="sm" onClick={() => handleToggleRole(u.id)}>{u.role === 'admin' ? '일반으로' : '관리자로'}</Button>
+                          <Button variant="ghost" size="sm" onClick={() => handleDeleteUser(u.id)}><span className="text-red-500">삭제</span></Button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
           </div>
-          <div className="flex items-center gap-2 mt-2">
-            <label htmlFor="lang" className="text-sm">언어</label>
-            <Select value={language} onChange={e => setLanguage(e.target.value)} className="w-32">
-              <option value="ko">한국어</option>
-              <option value="en">English</option>
-            </Select>
+        )}
+        {tab === 'data' && (
+          <div className="space-y-8">
+            {/* 회사 목록 */}
+            <div>
+              <div className="font-semibold text-lg mb-2">회사 목록</div>
+              <table className="min-w-full bg-white border rounded-lg shadow-sm text-sm">
+                <thead>
+                  <tr className="bg-gray-50 text-gray-700">
+                    <th className="px-4 py-2 text-left">회사명</th>
+                    <th className="px-4 py-2 text-left">주소</th>
+                    <th className="px-4 py-2 text-left">등록일</th>
+                    <th className="px-4 py-2 text-center">관리</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {companies.length === 0 ? (
+                    <tr><td colSpan={4} className="text-center text-gray-400 py-8">회사 데이터가 없습니다.</td></tr>
+                  ) : (
+                    companies.map(c => (
+                      <tr key={c.id} className="hover:bg-blue-50 transition">
+                        <td className="px-4 py-2 whitespace-nowrap">{c.name}</td>
+                        <td className="px-4 py-2 whitespace-nowrap">{c.address}</td>
+                        <td className="px-4 py-2 whitespace-nowrap">{c.createdAt}</td>
+                        <td className="px-4 py-2 text-center">
+                          <Button variant="ghost" size="sm" onClick={() => alert('회사 삭제는 추후 구현 예정입니다.')}>삭제</Button>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+            {/* 미팅 목록 */}
+            <div>
+              <div className="font-semibold text-lg mb-2">미팅 목록</div>
+              <table className="min-w-full bg-white border rounded-lg shadow-sm text-sm">
+                <thead>
+                  <tr className="bg-gray-50 text-gray-700">
+                    <th className="px-4 py-2 text-left">제목</th>
+                    <th className="px-4 py-2 text-left">고객사</th>
+                    <th className="px-4 py-2 text-left">날짜</th>
+                    <th className="px-4 py-2 text-center">관리</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {meetings.length === 0 ? (
+                    <tr><td colSpan={4} className="text-center text-gray-400 py-8">미팅 데이터가 없습니다.</td></tr>
+                  ) : (
+                    meetings.map(m => (
+                      <tr key={m.id} className="hover:bg-blue-50 transition">
+                        <td className="px-4 py-2 whitespace-nowrap">{m.title}</td>
+                        <td className="px-4 py-2 whitespace-nowrap">{companies.find(c => c.id === m.companyId)?.name || '-'}</td>
+                        <td className="px-4 py-2 whitespace-nowrap">{m.date}</td>
+                        <td className="px-4 py-2 text-center">
+                          <Button variant="ghost" size="sm" onClick={() => alert('미팅 삭제는 추후 구현 예정입니다.')}>삭제</Button>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+            {/* 태스크 목록 */}
+            <div>
+              <div className="font-semibold text-lg mb-2">태스크 목록</div>
+              <table className="min-w-full bg-white border rounded-lg shadow-sm text-sm">
+                <thead>
+                  <tr className="bg-gray-50 text-gray-700">
+                    <th className="px-4 py-2 text-left">태스크명</th>
+                    <th className="px-4 py-2 text-left">고객사</th>
+                    <th className="px-4 py-2 text-left">마감일</th>
+                    <th className="px-4 py-2 text-center">관리</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {tasks.length === 0 ? (
+                    <tr><td colSpan={4} className="text-center text-gray-400 py-8">태스크 데이터가 없습니다.</td></tr>
+                  ) : (
+                    tasks.map(t => (
+                      <tr key={t.id} className="hover:bg-blue-50 transition">
+                        <td className="px-4 py-2 whitespace-nowrap">{t.name}</td>
+                        <td className="px-4 py-2 whitespace-nowrap">{companies.find(c => c.id === t.companyId)?.name || '-'}</td>
+                        <td className="px-4 py-2 whitespace-nowrap">{t.endDate}</td>
+                        <td className="px-4 py-2 text-center">
+                          <Button variant="ghost" size="sm" onClick={() => alert('태스크 삭제는 추후 구현 예정입니다.')}>삭제</Button>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
           </div>
-        </Card>
+        )}
       </div>
     );
   };
@@ -1538,7 +1802,9 @@ function App() {
       case 'dataExport':
         return renderDataExport();
       case 'settings':
-        return renderSettings();
+        return <SettingsView handleLogout={handleLogout} authUser={authUser} />;
+      case 'admin':
+        return <AdminView companies={companies} meetings={meetings} tasks={tasks} />;
       default:
         return renderDashboard();
     }
@@ -1558,16 +1824,117 @@ function App() {
   // 사이드바 상태
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
+  // 1. 인증 상태 관리 및 API 함수 추가
+  const [authUser, setAuthUser] = useState<User | null>(null);
+  const [authToken, setAuthToken] = useState<string | null>(null);
+  const [authLoading, setAuthLoading] = useState(true);
+  const [showLogin, setShowLogin] = useState(false);
+  const [showRegister, setShowRegister] = useState(false);
+  const [loginForm, setLoginForm] = useState({ username: '', password: '' });
+  const [registerForm, setRegisterForm] = useState({ username: '', password: '' });
+  const [authError, setAuthError] = useState<string | null>(null);
+
+  // App 컴포넌트 최상단에 추가 (프로필 사진 상태)
+  const [profileImage, setProfileImage] = useState<string | null>(null);
+
+  // 로그인/회원가입/내 정보 상태 관리
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    if (!token) { setAuthLoading(false); return; }
+    apiAuth.fetchMe(token)
+      .then(user => { setAuthUser(user); setAuthToken(token); })
+      .catch(() => { setAuthUser(null); setAuthToken(null); localStorage.removeItem('token'); })
+      .finally(() => setAuthLoading(false));
+  }, []);
+
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setAuthError(null);
+    try {
+      const { token, user } = await apiAuth.login(loginForm.username, loginForm.password);
+      setAuthUser(user);
+      setAuthToken(token);
+      localStorage.setItem('token', token);
+      setShowLogin(false);
+    } catch (err: any) {
+      setAuthError(err.message);
+    }
+  };
+  const handleRegister = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setAuthError(null);
+    try {
+      await apiAuth.register(registerForm.username, registerForm.password);
+      setShowRegister(false);
+      setShowLogin(true);
+    } catch (err: any) {
+      setAuthError(err.message);
+    }
+  };
+  const handleLogout = () => {
+    setAuthUser(null);
+    setAuthToken(null);
+    localStorage.removeItem('token');
+  };
+
+  // 렌더링 분기: 인증 필요
+  if (authLoading) return <div className="flex items-center justify-center h-screen">Loading...</div>;
+  if (!authUser) return (
+    <div className="flex items-center justify-center h-screen bg-gray-50">
+      <div className="bg-white p-8 rounded shadow w-full max-w-xs">
+        <h2 className="text-xl font-bold mb-4">로그인</h2>
+        <form onSubmit={handleLogin} className="space-y-4">
+          <input className="w-full border rounded px-3 py-2" placeholder="아이디" value={loginForm.username} onChange={e => setLoginForm(f => ({ ...f, username: e.target.value }))} />
+          <input className="w-full border rounded px-3 py-2" placeholder="비밀번호" type="password" value={loginForm.password} onChange={e => setLoginForm(f => ({ ...f, password: e.target.value }))} />
+          {authError && <div className="text-red-500 text-sm">{authError}</div>}
+          <button className="w-full bg-[#1a237e] text-white py-2 rounded" type="submit">로그인</button>
+        </form>
+        <button className="mt-4 text-sm text-[#1a237e] underline" onClick={() => { setShowLogin(false); setShowRegister(true); }}>회원가입</button>
+      </div>
+      {showRegister && (
+        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-30 z-50">
+          <div className="bg-white p-8 rounded shadow w-full max-w-xs relative">
+            <button className="absolute top-2 right-2" onClick={() => setShowRegister(false)}>X</button>
+            <h2 className="text-xl font-bold mb-4">회원가입</h2>
+            <form onSubmit={handleRegister} className="space-y-4">
+              <input className="w-full border rounded px-3 py-2" placeholder="아이디" value={registerForm.username} onChange={e => setRegisterForm(f => ({ ...f, username: e.target.value }))} />
+              <input className="w-full border rounded px-3 py-2" placeholder="비밀번호" type="password" value={registerForm.password} onChange={e => setRegisterForm(f => ({ ...f, password: e.target.value }))} />
+              {authError && <div className="text-red-500 text-sm">{authError}</div>}
+              <button className="w-full bg-[#1a237e] text-white py-2 rounded" type="submit">회원가입</button>
+            </form>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+
   return (
     <div className="flex min-h-screen bg-gray-50">
       {/* 사이드 네비게이션 */}
-      <aside className={`fixed md:static z-30 top-0 left-0 h-full w-48 md:w-56 lg:w-64 bg-white border-r flex flex-col transition-transform duration-200 md:translate-x-0 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0`} style={{backgroundColor: '#fff'}}>
-        <div className="h-16 flex items-center justify-center font-bold text-xl border-b" style={{color: '#1a237e'}}>CRM</div>
+      <aside className={`fixed md:static z-30 top-0 left-0 h-full w-48 md:w-56 lg:w-64 bg-white border-r flex flex-col transition-transform duration-200 md:translate-x-0 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0`} style={{ backgroundColor: '#fff' }}>
+        <div className="h-16 flex items-center justify-center font-bold text-xl border-b relative" style={{ color: '#1a237e' }}>
+          <div className="absolute left-4 flex items-center gap-2">
+            <div className="w-10 h-10 rounded-full bg-gray-200 overflow-hidden flex items-center justify-center">
+              {profileImage ? (
+                <img src={profileImage} alt="프로필" className="w-full h-full object-cover" />
+              ) : (
+                <UserCircleIcon className="w-8 h-8 text-gray-400" />
+              )}
+            </div>
+          </div>
+          CRM
+        </div>
         <nav className="flex-1 flex flex-col items-center gap-2 py-6">
           <button onClick={() => setView({ type: 'dashboard' })} className={`w-16 h-16 flex items-center justify-center rounded-lg transition-colors ${view.type === 'dashboard' ? 'bg-[#1a237e] text-white' : 'text-[#1a237e] hover:bg-[#e3e7f7]'}`}> <DashboardIcon className="w-12 h-12" /> </button>
           <button onClick={() => setView({ type: 'clientList' })} className={`w-16 h-16 flex items-center justify-center rounded-lg transition-colors ${view.type === 'clientList' ? 'bg-[#ff9800] text-white' : 'text-[#ff9800] hover:bg-orange-100'}`}> <ClientsIcon className="w-12 h-12" /> </button>
           <button onClick={() => setView({ type: 'calendar' })} className={`w-16 h-16 flex items-center justify-center rounded-lg transition-colors ${view.type === 'calendar' ? 'bg-[#1a237e] text-white' : 'text-[#1a237e] hover:bg-[#e3e7f7]'}`}> <CalendarDaysIcon className="w-12 h-12" /> </button>
           <button onClick={() => setView({ type: 'analytics' })} className={`w-16 h-16 flex items-center justify-center rounded-lg transition-colors ${view.type === 'analytics' ? 'bg-[#ff9800] text-white' : 'text-[#ff9800] hover:bg-orange-100'}`}> <ChartBarIcon className="w-12 h-12" /> </button>
+          {/* 설정 메뉴 */}
+          <button onClick={() => setView({ type: 'settings' })} className={`w-16 h-16 flex items-center justify-center rounded-lg transition-colors ${view.type === 'settings' ? 'bg-[#1a237e] text-white' : 'text-[#1a237e] hover:bg-[#e3e7f7]'}`}> <UserCircleIcon className="w-12 h-12" /> </button>
+          {/* 관리자 메뉴: admin만 노출 */}
+          {authUser?.role === 'admin' && (
+            <button onClick={() => setView({ type: 'admin' })} className={`w-16 h-16 flex items-center justify-center rounded-lg transition-colors ${view.type === 'admin' ? 'bg-[#ff9800] text-white' : 'text-[#ff9800] hover:bg-orange-100'}`}> <Bars3Icon className="w-12 h-12" /> </button>
+          )}
         </nav>
         <div className="flex flex-col items-center gap-2 p-4 border-t mt-auto">
           <button className="w-12 h-12 flex items-center justify-center rounded-full text-[#1a237e] hover:bg-[#e3e7f7]"> <UserCircleIcon className="w-8 h-8" /> </button>
