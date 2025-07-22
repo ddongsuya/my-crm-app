@@ -4,7 +4,7 @@ import {
   Button, Card, Input, Textarea, Select, Modal, CompanyForm, MeetingForm, TaskForm, GanttChartRenderer, StatCard, UpcomingItemCard, QuotationForm, ContractForm
 } from './components';
 import {
-  PlusIcon, TrashIcon, PencilIcon, BellIcon, DashboardIcon, ClientsIcon, ChevronDownIcon, CalendarDaysIcon, ListBulletIcon, ChartBarIcon, UserCircleIcon, InformationCircleIcon, ClipboardDocumentListIcon, BeakerIcon, ChevronLeftIcon, ChevronRightIcon, ChartPieIcon, Bars3Icon
+  PlusIcon, TrashIcon, PencilIcon, DashboardIcon, ClientsIcon, CalendarDaysIcon, ListBulletIcon, ChartBarIcon, UserCircleIcon, InformationCircleIcon, ClipboardDocumentListIcon, BeakerIcon, ChevronLeftIcon, ChevronRightIcon, ChartPieIcon, Bars3Icon
 } from './icons';
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, Legend } from 'recharts';
 
@@ -177,19 +177,15 @@ function App() {
   const [meetings, setMeetings] = useState<Meeting[]>([]);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
-  const [showNotificationPanel, setShowNotificationPanel] = useState(false);
 
   // 모달 상태들
-  const [showCompanyModal, setShowCompanyModal] = useState(false);
   const [showMeetingModal, setShowMeetingModal] = useState(false);
   const [showTaskModal, setShowTaskModal] = useState(false);
-  const [showNotificationModal, setShowNotificationModal] = useState(false);
   const [showQuotationModal, setShowQuotationModal] = useState(false);
   const [showContractModal, setShowContractModal] = useState(false);
   const [showStudyModal, setShowStudyModal] = useState(false);
 
   // 편집할 항목들
-  const [editingCompany, setEditingCompany] = useState<Company | null>(null);
   const [editingMeeting, setEditingMeeting] = useState<Meeting | null>(null);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [editingQuotation, setEditingQuotation] = useState<Quotation | null>(null);
@@ -211,15 +207,6 @@ function App() {
   const [clientListSearch, setClientListSearch] = useState('');
   const [clientListSortKey, setClientListSortKey] = useState<'name' | 'createdAt'>('name');
   const [clientListSortAsc, setClientListSortAsc] = useState(true);
-
-  // App 컴포넌트 내 useState 추가
-  const [showOngoingContracts, setShowOngoingContracts] = useState(false);
-  const [showCompletedContracts, setShowCompletedContracts] = useState(false);
-  const [showInvoiceContracts, setShowInvoiceContracts] = useState(false);
-
-  // 1. App 컴포넌트 최상단에 추가 (기존 useState들과 함께)
-  const [notesDraft, setNotesDraft] = useState('');
-  const [notesSaved, setNotesSaved] = useState(false);
 
   // 데이터 로딩
   const loadData = useCallback(async () => {
@@ -251,8 +238,8 @@ function App() {
     try {
       const updatedCompany = await api.companies.update(id, companyData);
       setCompanies(prev => prev.map(c => c.id === id ? updatedCompany : c));
-      setShowCompanyModal(false);
-      setEditingCompany(null);
+      setShowMeetingModal(false);
+      setEditingMeeting(null);
     } catch (error) {
       console.error('회사 수정 실패:', error);
     }
@@ -465,7 +452,7 @@ function App() {
           </div>
           <div className="flex flex-col gap-4 w-full lg:w-64">
             {/* 진행중 계약 */}
-            <Card className="p-4 cursor-pointer" onClick={() => setShowOngoingContracts(true)}>
+            <Card className="p-4 cursor-pointer">
               <h3 className="font-semibold mb-2 flex items-center"><ClipboardDocumentListIcon className="w-4 h-4 mr-2" />진행중 계약</h3>
               <div className="text-2xl font-bold mb-2">{(() => {
                 const now = new Date();
@@ -478,7 +465,7 @@ function App() {
               </ul>
             </Card>
             {/* 완료된 계약 */}
-            <Card className="p-4 cursor-pointer" onClick={() => setShowCompletedContracts(true)}>
+            <Card className="p-4 cursor-pointer">
               <h3 className="font-semibold mb-2 flex items-center"><ClipboardDocumentListIcon className="w-4 h-4 mr-2 text-gray-400" />완료된 계약</h3>
               <div className="text-2xl font-bold mb-2">{(() => {
                 const now = new Date();
@@ -491,7 +478,7 @@ function App() {
               </ul>
             </Card>
             {/* 세금계산서 발행 예정 */}
-            <Card className="p-4 cursor-pointer" onClick={() => setShowInvoiceContracts(true)}>
+            <Card className="p-4 cursor-pointer">
               <h3 className="font-semibold mb-2 flex items-center"><ClipboardDocumentListIcon className="w-4 h-4 mr-2 text-blue-500" />세금계산서 발행 예정</h3>
               <div className="text-2xl font-bold mb-2">{(() => {
                 const now = new Date();
@@ -1902,11 +1889,11 @@ function App() {
   );
 
   // App 함수 내부에 아래 더미 함수 추가 (호출부 인자 개수와 일치)
-  const handleUpdateQuotation = async (id?: any, data?: any) => { };
-  const handleCreateQuotation = async (data?: any) => { };
-  const handleUpdateContract = async (id?: any, data?: any) => { };
-  const handleCreateContract = async (data?: any) => { };
-  const handleDeleteStudy = async (id?: any) => { };
+  const handleUpdateQuotation = async (_id?: any, _data?: any) => { };
+  const handleCreateQuotation = async (_data?: any) => { };
+  const handleUpdateContract = async (_id?: any, _data?: any) => { };
+  const handleCreateContract = async (_data?: any) => { };
+  const handleDeleteStudy = async (_id?: any) => { };
 
   return (
     <div className="flex min-h-screen bg-gray-50">
