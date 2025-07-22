@@ -1810,13 +1810,6 @@ function App() {
     }
   };
 
-  // App 컴포넌트 내 useState 선언 아래에 더미 핸들러 함수 추가
-  const handleUpdateQuotation = async (id: string, data: any) => { };
-  const handleCreateQuotation = async (data: any) => { };
-  const handleUpdateContract = async (id: string, data: any) => { };
-  const handleCreateContract = async (data: any) => { };
-  const handleDeleteStudy = async (id: string) => { };
-
   // 기존 useState import 및 상태 선언 아래에 추가
   const [notesDraftMap, setNotesDraftMap] = useState<{ [companyId: string]: string }>({});
   const [notesSavedMap, setNotesSavedMap] = useState<{ [companyId: string]: boolean }>({});

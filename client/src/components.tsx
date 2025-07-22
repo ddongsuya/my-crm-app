@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Company, Meeting, Task, TaskStatus, Contact, Quotation, Contract, Study } from './types';
 import {
-  PlusIcon, TrashIcon, PencilIcon, XMarkIcon, CalendarDaysIcon
+  PlusIcon, TrashIcon, XMarkIcon, CalendarDaysIcon
 } from './icons';
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid, Cell } from 'recharts';
 
