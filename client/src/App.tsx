@@ -1806,18 +1806,13 @@ function App() {
 
   // 1. 인증 상태 관리 및 API 함수 추가
   const [authUser, setAuthUser] = useState<User | null>(null);
-  const [authToken, setAuthToken] = useState<string | null>(null);
   const [authLoading, setAuthLoading] = useState(true);
-  const [showLogin, setShowLogin] = useState(false);
   const [showRegister, setShowRegister] = useState(false);
   const [loginForm, setLoginForm] = useState({ username: '', password: '' });
   const [registerForm, setRegisterForm] = useState({ username: '', password: '' });
   const [authError, setAuthError] = useState<string | null>(null);
 
-  // App 컴포넌트 최상단에 추가 (프로필 사진 상태)
-  const [profileImage, setProfileImage] = useState<string | null>(null);
-
-  // 로그인/회원가입/내 정보 상태 관리
+    // 로그인/회원가입/내 정보 상태 관리
   useEffect(() => {
     const token = localStorage.getItem('token');
     if (!token) { setAuthLoading(false); return; }
