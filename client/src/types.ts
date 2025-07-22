@@ -22,6 +22,12 @@ export interface Company {
   mainPhoneNumber?: string;
 }
 
+export type PaymentTerms = {
+  advance?: string;
+  interims?: string[];
+  balance?: string;
+} | string;
+
 export interface Quotation {
   id: string;
   contactId: string;
@@ -29,7 +35,7 @@ export interface Quotation {
   quotationName: string;
   quotationAmount: string;
   discountRate?: string;
-  paymentTerms?: string;
+  paymentTerms?: PaymentTerms;
 }
 
 export interface Contract {
@@ -41,7 +47,7 @@ export interface Contract {
   contractPeriodStart: string;
   contractPeriodEnd: string;
   contractSigningDate?: string;
-  paymentTerms?: string;
+  paymentTerms?: PaymentTerms;
   taxInvoiceIssued?: boolean;
   taxInvoiceIssueDate?: string;
 }
