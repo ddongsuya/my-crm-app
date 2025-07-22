@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Company, Meeting, Task, TaskStatus, Contact, Quotation, Contract, Study } from './types';
 import {
-  PlusIcon, TrashIcon, PencilIcon, XMarkIcon, CalendarDaysIcon, UserCircleIcon, EnvelopeIcon, PhoneIcon, MapPinIcon, InformationCircleIcon, ClipboardDocumentListIcon, BeakerIcon, CalendarModernIcon, ChartBarIcon, ChartPieIcon
+  PlusIcon, TrashIcon, PencilIcon, XMarkIcon, CalendarDaysIcon
 } from './icons';
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid, Cell } from 'recharts';
 
@@ -411,7 +411,7 @@ export const CompanyForm: React.FC<{
                     // 객체일 경우 사람이 읽을 수 있게 변환
                     const pt = q.paymentTerms;
                     const adv = pt.advance ? `선금: ${Number(pt.advance).toLocaleString()}원` : '';
-                    const ints = Array.isArray(pt.interims) && pt.interims.length > 0 ? pt.interims.map((v: string, i: number) => v ? `중도금${i + 1}: ${Number(v).toLocaleString()}원` : '').join(', ') : '';
+                    const ints = Array.isArray(pt.interims) && pt.interims.length > 0 ? pt.interims.map((v: string) => v ? `중도금${pt.interims.indexOf(v) + 1}: ${Number(v).toLocaleString()}원` : '').join(', ') : '';
                     const bal = pt.balance ? `잔금: ${Number(pt.balance).toLocaleString()}원` : '';
                     return [adv, ints, bal].filter(Boolean).join(', ');
                   })()}
@@ -478,9 +478,9 @@ export const CompanyForm: React.FC<{
                     />
                   </div>
                   {/* 중도금(동적 추가) */}
-                  {Array.isArray(newQuotation.paymentTerms?.interims) && newQuotation.paymentTerms.interims.map((amt: string, idx: number) => (
-                    <div key={idx} className="flex items-center gap-2 mb-1">
-                      <span className="w-16">중도금{idx + 1}</span>
+                  {Array.isArray(newQuotation.paymentTerms?.interims) && newQuotation.paymentTerms.interims.map((amt: string) => (
+                    <div key={newQuotation.paymentTerms.interims.indexOf(amt)} className="flex items-center gap-2 mb-1">
+                      <span className="w-16">중도금{newQuotation.paymentTerms.interims.indexOf(amt) + 1}</span>
                       <Input
                         placeholder="금액"
                         value={amt}
@@ -488,7 +488,7 @@ export const CompanyForm: React.FC<{
                           ...prev,
                           paymentTerms: (typeof prev.paymentTerms === 'object' && prev.paymentTerms !== null) ? {
                             ...prev.paymentTerms,
-                            interims: prev.paymentTerms.interims.map((v: string, i: number) => i === idx ? e.target.value.replace(/[^\d]/g, '') : v)
+                            interims: prev.paymentTerms.interims.map((v: string, i: number) => i === newQuotation.paymentTerms.interims.indexOf(amt) ? e.target.value.replace(/[^\d]/g, '') : v)
                           } : { interims: [...(prev.paymentTerms?.interims || []), e.target.value.replace(/[^\d]/g, '')] }
                         }))}
                         className="w-32"
@@ -497,8 +497,8 @@ export const CompanyForm: React.FC<{
                         ...prev,
                         paymentTerms: (typeof prev.paymentTerms === 'object' && prev.paymentTerms !== null) ? {
                           ...prev.paymentTerms,
-                          interims: prev.paymentTerms.interims.filter((_: string, i: number) => i !== idx)
-                        } : { interims: (prev.paymentTerms?.interims || []).filter((_: string, i: number) => i !== idx) }
+                          interims: prev.paymentTerms.interims.filter((_: string, i: number) => i !== newQuotation.paymentTerms.interims.indexOf(amt))
+                        } : { interims: (prev.paymentTerms?.interims || []).filter((_: string, i: number) => i !== newQuotation.paymentTerms.interims.indexOf(amt)) }
                       }))}><TrashIcon className="w-4 h-4 text-red-400" /></Button>
                     </div>
                   ))}
@@ -620,7 +620,7 @@ export const CompanyForm: React.FC<{
                       if (typeof pt === 'string') return pt;
                       if (typeof pt === 'object' && pt !== null && ('advance' in pt || 'interims' in pt || 'balance' in pt)) {
                         const adv = pt.advance ? `선금: ${Number(pt.advance).toLocaleString()}원` : '';
-                        const ints = Array.isArray(pt.interims) && pt.interims.length > 0 ? pt.interims.map((v: string, i: number) => v ? `중도금${i + 1}: ${Number(v).toLocaleString()}원` : '').join(', ') : '';
+                        const ints = Array.isArray(pt.interims) && pt.interims.length > 0 ? pt.interims.map((v: string) => v ? `중도금${pt.interims.indexOf(v) + 1}: ${Number(v).toLocaleString()}원` : '').join(', ') : '';
                         const bal = pt.balance ? `잔금: ${Number(pt.balance).toLocaleString()}원` : '';
                         return [adv, ints, bal].filter(Boolean).join(', ');
                       }
@@ -735,7 +735,7 @@ export const CompanyForm: React.FC<{
                       if (typeof pt === 'string') return `, 지급조건: ${pt}`;
                       if (typeof pt === 'object' && pt !== null && ('advance' in pt || 'interims' in pt || 'balance' in pt)) {
                         const adv = pt.advance ? `선금: ${Number(pt.advance).toLocaleString()}원` : '';
-                        const ints = Array.isArray(pt.interims) && pt.interims.length > 0 ? pt.interims.map((v: string, i: number) => v ? `중도금${i + 1}: ${Number(v).toLocaleString()}원` : '').join(', ') : '';
+                        const ints = Array.isArray(pt.interims) && pt.interims.length > 0 ? pt.interims.map((v: string) => v ? `중도금${pt.interims.indexOf(v) + 1}: ${Number(v).toLocaleString()}원` : '').join(', ') : '';
                         const bal = pt.balance ? `잔금: ${Number(pt.balance).toLocaleString()}원` : '';
                         return [adv, ints, bal].filter(Boolean).length > 0 ? `, 지급조건: ${[adv, ints, bal].filter(Boolean).join(', ')}` : '';
                       }
