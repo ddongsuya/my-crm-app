@@ -466,60 +466,82 @@ export const CompanyForm: React.FC<{
                     <span className="w-16">선금</span>
                     <Input
                       placeholder="금액"
-                      value={newQuotation.paymentTerms?.advance || ''}
+                      value={typeof newQuotation.paymentTerms === 'object' && newQuotation.paymentTerms !== null && 'advance' in newQuotation.paymentTerms ? newQuotation.paymentTerms.advance || '' : ''}
                       onChange={e => setNewQuotation(prev => ({
                         ...prev,
-                        paymentTerms: (typeof prev.paymentTerms === 'object' && prev.paymentTerms !== null) ? {
-                          ...prev.paymentTerms,
-                          advance: e.target.value.replace(/[^\d]/g, '')
-                        } : { advance: e.target.value.replace(/[^\d]/g, '') }
+                        paymentTerms: (typeof prev.paymentTerms === 'object' && prev.paymentTerms !== null)
+                          ? { ...prev.paymentTerms, advance: e.target.value.replace(/[^\d]/g, '') }
+                          : { advance: e.target.value.replace(/[^\d]/g, '') }
                       }))}
                       className="w-32"
                     />
                   </div>
                   {/* 중도금(동적 추가) */}
-                  {Array.isArray(newQuotation.paymentTerms?.interims) && newQuotation.paymentTerms.interims.map((amt: string) => (
-                    <div key={newQuotation.paymentTerms.interims.indexOf(amt)} className="flex items-center gap-2 mb-1">
-                      <span className="w-16">중도금{newQuotation.paymentTerms.interims.indexOf(amt) + 1}</span>
+                  {(typeof newQuotation.paymentTerms === 'object' && newQuotation.paymentTerms !== null && Array.isArray(newQuotation.paymentTerms.interims) ? newQuotation.paymentTerms.interims : []).map((amt: string, idx: number) => (
+                    <div key={idx} className="flex items-center gap-2 mb-1">
+                      <span className="w-16">중도금{idx + 1}</span>
                       <Input
                         placeholder="금액"
                         value={amt}
-                        onChange={e => setNewQuotation(prev => ({
-                          ...prev,
-                          paymentTerms: (typeof prev.paymentTerms === 'object' && prev.paymentTerms !== null) ? {
-                            ...prev.paymentTerms,
-                            interims: prev.paymentTerms.interims.map((v: string, i: number) => i === newQuotation.paymentTerms.interims.indexOf(amt) ? e.target.value.replace(/[^\d]/g, '') : v)
-                          } : { interims: [...(prev.paymentTerms?.interims || []), e.target.value.replace(/[^\d]/g, '')] }
-                        }))}
+                        onChange={e => setNewQuotation(prev => {
+                          if (typeof prev.paymentTerms === 'object' && prev.paymentTerms !== null && Array.isArray(prev.paymentTerms.interims)) {
+                            return {
+                              ...prev,
+                              paymentTerms: {
+                                ...prev.paymentTerms,
+                                interims: prev.paymentTerms.interims.map((v: string, i: number) => i === idx ? e.target.value.replace(/[^\d]/g, '') : v)
+                              }
+                            };
+                          } else {
+                            return {
+                              ...prev,
+                              paymentTerms: { interims: [e.target.value.replace(/[^\d]/g, '')] }
+                            };
+                          }
+                        })}
                         className="w-32"
                       />
-                      <Button type="button" size="sm" variant="ghost" onClick={() => setNewQuotation(prev => ({
-                        ...prev,
-                        paymentTerms: (typeof prev.paymentTerms === 'object' && prev.paymentTerms !== null) ? {
-                          ...prev.paymentTerms,
-                          interims: prev.paymentTerms.interims.filter((_: string, i: number) => i !== newQuotation.paymentTerms.interims.indexOf(amt))
-                        } : { interims: (prev.paymentTerms?.interims || []).filter((_: string, i: number) => i !== newQuotation.paymentTerms.interims.indexOf(amt)) }
-                      }))}><TrashIcon className="w-4 h-4 text-red-400" /></Button>
+                      <Button type="button" size="sm" variant="ghost" onClick={() => setNewQuotation(prev => {
+                        if (typeof prev.paymentTerms === 'object' && prev.paymentTerms !== null && Array.isArray(prev.paymentTerms.interims)) {
+                          return {
+                            ...prev,
+                            paymentTerms: {
+                              ...prev.paymentTerms,
+                              interims: prev.paymentTerms.interims.filter((_: string, i: number) => i !== idx)
+                            }
+                          };
+                        } else {
+                          return prev;
+                        }
+                      })}><TrashIcon className="w-4 h-4 text-red-400" /></Button>
                     </div>
                   ))}
-                  <Button type="button" size="sm" variant="secondary" className="mb-2" onClick={() => setNewQuotation(prev => ({
-                    ...prev,
-                    paymentTerms: (typeof prev.paymentTerms === 'object' && prev.paymentTerms !== null) ? {
-                      ...prev.paymentTerms,
-                      interims: [...(prev.paymentTerms?.interims || []), '']
-                    } : { interims: [...(prev.paymentTerms?.interims || []), ''] }
-                  }))}>+ 중도금 추가</Button>
+                  <Button type="button" size="sm" variant="secondary" className="mb-2" onClick={() => setNewQuotation(prev => {
+                    if (typeof prev.paymentTerms === 'object' && prev.paymentTerms !== null && Array.isArray(prev.paymentTerms.interims)) {
+                      return {
+                        ...prev,
+                        paymentTerms: {
+                          ...prev.paymentTerms,
+                          interims: [...prev.paymentTerms.interims, '']
+                        }
+                      };
+                    } else {
+                      return {
+                        ...prev,
+                        paymentTerms: { interims: [''] }
+                      };
+                    }
+                  })}>+ 중도금 추가</Button>
                   <div className="flex items-center gap-2 mb-1">
                     <span className="w-16">잔금</span>
                     <Input
                       placeholder="금액"
-                      value={newQuotation.paymentTerms?.balance || ''}
+                      value={typeof newQuotation.paymentTerms === 'object' && newQuotation.paymentTerms !== null && 'balance' in newQuotation.paymentTerms ? newQuotation.paymentTerms.balance || '' : ''}
                       onChange={e => setNewQuotation(prev => ({
                         ...prev,
-                        paymentTerms: (typeof prev.paymentTerms === 'object' && prev.paymentTerms !== null) ? {
-                          ...prev.paymentTerms,
-                          balance: e.target.value.replace(/[^\d]/g, '')
-                        } : { balance: e.target.value.replace(/[^\d]/g, '') }
+                        paymentTerms: (typeof prev.paymentTerms === 'object' && prev.paymentTerms !== null)
+                          ? { ...prev.paymentTerms, balance: e.target.value.replace(/[^\d]/g, '') }
+                          : { balance: e.target.value.replace(/[^\d]/g, '') }
                       }))}
                       className="w-32"
                     />
@@ -529,9 +551,12 @@ export const CompanyForm: React.FC<{
                 <div className="col-span-2 text-xs text-blue-700">
                   지급 조건 합계: {
                     (() => {
-                      const adv = Number(newQuotation.paymentTerms?.advance || 0);
-                      const ints = (newQuotation.paymentTerms?.interims || []).reduce((a: number, b: string) => a + Number(b || 0), 0);
-                      const bal = Number(newQuotation.paymentTerms?.balance || 0);
+                      const adv = (typeof newQuotation.paymentTerms === 'object' && newQuotation.paymentTerms !== null && 'advance' in newQuotation.paymentTerms)
+                        ? Number(newQuotation.paymentTerms.advance || 0) : 0;
+                      const ints = (typeof newQuotation.paymentTerms === 'object' && newQuotation.paymentTerms !== null && Array.isArray(newQuotation.paymentTerms.interims))
+                        ? newQuotation.paymentTerms.interims.reduce((a: number, b: string) => a + Number(b || 0), 0) : 0;
+                      const bal = (typeof newQuotation.paymentTerms === 'object' && newQuotation.paymentTerms !== null && 'balance' in newQuotation.paymentTerms)
+                        ? Number(newQuotation.paymentTerms.balance || 0) : 0;
                       return (adv + ints + bal).toLocaleString();
                     })()
                   } / 할인 적용 금액: {
@@ -541,9 +566,12 @@ export const CompanyForm: React.FC<{
                 </div>
                 {/* 유효성 안내 */}
                 {(() => {
-                  const adv = Number(newQuotation.paymentTerms?.advance || 0);
-                  const ints = (newQuotation.paymentTerms?.interims || []).reduce((a: number, b: string) => a + Number(b || 0), 0);
-                  const bal = Number(newQuotation.paymentTerms?.balance || 0);
+                  const adv = (typeof newQuotation.paymentTerms === 'object' && newQuotation.paymentTerms !== null && 'advance' in newQuotation.paymentTerms)
+                    ? Number(newQuotation.paymentTerms.advance || 0) : 0;
+                  const ints = (typeof newQuotation.paymentTerms === 'object' && newQuotation.paymentTerms !== null && Array.isArray(newQuotation.paymentTerms.interims))
+                    ? newQuotation.paymentTerms.interims.reduce((a: number, b: string) => a + Number(b || 0), 0) : 0;
+                  const bal = (typeof newQuotation.paymentTerms === 'object' && newQuotation.paymentTerms !== null && 'balance' in newQuotation.paymentTerms)
+                    ? Number(newQuotation.paymentTerms.balance || 0) : 0;
                   const total = adv + ints + bal;
                   const discounted = newQuotation.quotationAmount && newQuotation.discountRate ?
                     Number(newQuotation.quotationAmount) * (1 - Number(newQuotation.discountRate) / 100) : 0;
