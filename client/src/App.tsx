@@ -4,7 +4,7 @@ import {
   Button, Card, Input, Textarea, Select, Modal, CompanyForm, MeetingForm, TaskForm, GanttChartRenderer, StatCard, UpcomingItemCard, QuotationForm, ContractForm
 } from './components';
 import {
-  PlusIcon, TrashIcon, PencilIcon, BellIcon, DashboardIcon, ClientsIcon, ChevronDownIcon, CalendarDaysIcon, ListBulletIcon, ChartBarIcon, UserCircleIcon, EnvelopeIcon, PhoneIcon, MapPinIcon, InformationCircleIcon, ClipboardDocumentListIcon, BeakerIcon, CalendarModernIcon, ChevronLeftIcon, ChevronRightIcon, ChartPieIcon, ArrowDownTrayIcon, XMarkIcon, Bars3Icon
+  PlusIcon, TrashIcon, PencilIcon, BellIcon, DashboardIcon, ClientsIcon, ChevronDownIcon, CalendarDaysIcon, ListBulletIcon, ChartBarIcon, UserCircleIcon, InformationCircleIcon, ClipboardDocumentListIcon, BeakerIcon, ChevronLeftIcon, ChevronRightIcon, ChartPieIcon, Bars3Icon
 } from './icons';
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, Legend } from 'recharts';
 
