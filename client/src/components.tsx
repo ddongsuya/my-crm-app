@@ -10,7 +10,7 @@ export const Button: React.FC<{
   children: React.ReactNode;
   variant?: 'primary' | 'secondary' | 'ghost';
   size?: 'sm' | 'md' | 'lg';
-  onClick?: () => void;
+  onClick?: React.MouseEventHandler<HTMLButtonElement>;
   className?: string;
   type?: 'button' | 'submit' | 'reset';
   disabled?: boolean;
@@ -54,11 +54,13 @@ export const Card: React.FC<{
 export const Input: React.FC<{
   placeholder?: string;
   value?: string;
-  onChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  onChange?: React.ChangeEventHandler<HTMLInputElement>;
   className?: string;
   type?: string;
   required?: boolean;
-}> = ({ placeholder, value, onChange, className = '', type = 'text', required }) => (
+  readOnly?: boolean;
+  disabled?: boolean;
+}> = ({ placeholder, value, onChange, className = '', type = 'text', required, readOnly, disabled }) => (
   <input
     type={type}
     className={`flex h-10 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-gray-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 ${className}`}
@@ -66,6 +68,8 @@ export const Input: React.FC<{
     value={value}
     onChange={onChange}
     {...(required ? { required: true } : {})}
+    {...(readOnly ? { readOnly: true } : {})}
+    {...(disabled ? { disabled: true } : {})}
   />
 );
 
@@ -88,17 +92,19 @@ export const Textarea: React.FC<{
 export const Select: React.FC<{
   children: React.ReactNode;
   value?: string;
-  onChange?: (e: React.ChangeEvent<HTMLSelectElement>) => void;
+  onChange?: React.ChangeEventHandler<HTMLSelectElement>;
   className?: string;
   defaultValue?: string;
   required?: boolean;
-}> = ({ children, value, onChange, className = '', defaultValue, required }) => (
+  disabled?: boolean;
+}> = ({ children, value, onChange, className = '', defaultValue, required, disabled }) => (
   <select
     className={`flex h-10 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 ${className}`}
     value={value}
     onChange={onChange}
     defaultValue={defaultValue}
     {...(required ? { required: true } : {})}
+    {...(disabled ? { disabled: true } : {})}
   >
     {children}
   </select>
