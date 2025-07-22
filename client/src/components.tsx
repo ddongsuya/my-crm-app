@@ -618,7 +618,7 @@ export const CompanyForm: React.FC<{
                       const pt = newContract.paymentTerms;
                       if (!pt) return '-';
                       if (typeof pt === 'string') return pt;
-                      if (typeof pt === 'object' && pt !== null && 'interims' in pt && Array.isArray(pt.interims)) {
+                      if (typeof pt === 'object' && pt !== null && ('advance' in pt || 'interims' in pt || 'balance' in pt)) {
                         const adv = pt.advance ? `선금: ${Number(pt.advance).toLocaleString()}원` : '';
                         const ints = Array.isArray(pt.interims) && pt.interims.length > 0 ? pt.interims.map((v: string, i: number) => v ? `중도금${i + 1}: ${Number(v).toLocaleString()}원` : '').join(', ') : '';
                         const bal = pt.balance ? `잔금: ${Number(pt.balance).toLocaleString()}원` : '';
@@ -733,7 +733,7 @@ export const CompanyForm: React.FC<{
                     (() => {
                       const pt = c.paymentTerms;
                       if (typeof pt === 'string') return `, 지급조건: ${pt}`;
-                      if (typeof pt === 'object' && pt !== null && 'interims' in pt && Array.isArray(pt.interims)) {
+                      if (typeof pt === 'object' && pt !== null && ('advance' in pt || 'interims' in pt || 'balance' in pt)) {
                         const adv = pt.advance ? `선금: ${Number(pt.advance).toLocaleString()}원` : '';
                         const ints = Array.isArray(pt.interims) && pt.interims.length > 0 ? pt.interims.map((v: string, i: number) => v ? `중도금${i + 1}: ${Number(v).toLocaleString()}원` : '').join(', ') : '';
                         const bal = pt.balance ? `잔금: ${Number(pt.balance).toLocaleString()}원` : '';
