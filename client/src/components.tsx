@@ -394,11 +394,13 @@ export const CompanyForm: React.FC<{
         {tab === 'quotations' && (
           <div className="space-y-4">
             {/* 기존 견적 목록 - 아코디언 */}
-            {quotations.map((q, idx) => (
+            {quotations.map(q => (
               <details key={q.id} className="border rounded-lg">
                 <summary className="p-4 cursor-pointer flex justify-between items-center">
                   <span className="font-medium">{q.quotationName}</span>
-                  <Button variant="ghost" size="sm" onClick={e => { e.stopPropagation(); removeQuotation(q.id); }}><TrashIcon className="w-4 h-4" /></Button>
+                  <Button variant="ghost" size="sm" onClick={e => { e.stopPropagation(); removeQuotation(q.id); }}>
+                    <TrashIcon className="w-4 h-4" />
+                  </Button>
                 </summary>
                 <div className="p-4 text-sm text-gray-600">
                   번호: {q.quotationNumber} <br />
@@ -411,7 +413,9 @@ export const CompanyForm: React.FC<{
                     // 객체일 경우 사람이 읽을 수 있게 변환
                     const pt = q.paymentTerms;
                     const adv = pt.advance ? `선금: ${Number(pt.advance).toLocaleString()}원` : '';
-                    const ints = Array.isArray(pt.interims) && pt.interims.length > 0 ? pt.interims.map((v: string) => v ? `중도금${pt.interims.indexOf(v) + 1}: ${Number(v).toLocaleString()}원` : '').join(', ') : '';
+                    const ints = Array.isArray(pt.interims) && pt.interims.length > 0
+                      ? pt.interims.map((v, i) => v ? `중도금${i + 1}: ${Number(v).toLocaleString()}원` : '').join(', ')
+                      : '';
                     const bal = pt.balance ? `잔금: ${Number(pt.balance).toLocaleString()}원` : '';
                     return [adv, ints, bal].filter(Boolean).join(', ');
                   })()}
@@ -589,11 +593,13 @@ export const CompanyForm: React.FC<{
         {tab === 'contracts' && (
           <div className="space-y-4">
             {/* 기존 계약 목록 - 아코디언 */}
-            {contracts.map((c, idx) => (
+            {contracts.map(c => (
               <details key={c.id} className="border rounded-lg">
                 <summary className="p-4 cursor-pointer flex justify-between items-center">
                   <span className="font-medium">{c.contractName}</span>
-                  <Button variant="ghost" size="sm" onClick={e => { e.stopPropagation(); removeContract(c.id); }}><TrashIcon className="w-4 h-4" /></Button>
+                  <Button variant="ghost" size="sm" onClick={e => { e.stopPropagation(); removeContract(c.id); }}>
+                    <TrashIcon className="w-4 h-4" />
+                  </Button>
                 </summary>
                 <div className="p-4 text-sm text-gray-600">
                   번호: {c.contractNumber} <br />
@@ -1041,36 +1047,21 @@ export const TaskForm: React.FC<{
 };
 
 // 견적/계약/연구 폼 최소 뼈대 컴포넌트 추가
-export const QuotationForm: React.FC<{
-  quotation?: Quotation | null;
-  companyId: string;
-  onSubmit: (data: any) => void;
-  onCancel: () => void;
-}> = ({ quotation, companyId, onSubmit, onCancel }) => (
+export const QuotationForm: React.FC<{ onCancel: () => void }> = ({ onCancel }) => (
   <div className="space-y-4">
     <div className="text-gray-500">QuotationForm 구현 필요</div>
     <Button onClick={onCancel}>취소</Button>
   </div>
 );
 
-export const ContractForm: React.FC<{
-  contract?: Contract | null;
-  companyId: string;
-  onSubmit: (data: any) => void;
-  onCancel: () => void;
-}> = ({ contract, companyId, onSubmit, onCancel }) => (
+export const ContractForm: React.FC<{ onCancel: () => void }> = ({ onCancel }) => (
   <div className="space-y-4">
     <div className="text-gray-500">ContractForm 구현 필요</div>
     <Button onClick={onCancel}>취소</Button>
   </div>
 );
 
-export const StudyForm: React.FC<{
-  study?: Study | null;
-  companyId: string;
-  onSubmit: (data: any) => void;
-  onCancel: () => void;
-}> = ({ study, companyId, onSubmit, onCancel }) => (
+export const StudyForm: React.FC<{ onCancel: () => void }> = ({ onCancel }) => (
   <div className="space-y-4">
     <div className="text-gray-500">StudyForm 구현 필요</div>
     <Button onClick={onCancel}>취소</Button>
