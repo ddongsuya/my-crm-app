@@ -403,7 +403,7 @@ export const CompanyForm: React.FC<{
                     // 객체일 경우 사람이 읽을 수 있게 변환
                     const pt = q.paymentTerms;
                     const adv = pt.advance ? `선금: ${Number(pt.advance).toLocaleString()}원` : '';
-                    const ints = Array.isArray(pt.interims) && pt.interims.length > 0 ? pt.interims.map((v, i) => v ? `중도금${i + 1}: ${Number(v).toLocaleString()}원` : '').join(', ') : '';
+                    const ints = Array.isArray(pt.interims) && pt.interims.length > 0 ? pt.interims.map((v: string, i: number) => v ? `중도금${i + 1}: ${Number(v).toLocaleString()}원` : '').join(', ') : '';
                     const bal = pt.balance ? `잔금: ${Number(pt.balance).toLocaleString()}원` : '';
                     return [adv, ints, bal].filter(Boolean).join(', ');
                   })()}
@@ -470,7 +470,7 @@ export const CompanyForm: React.FC<{
                     />
                   </div>
                   {/* 중도금(동적 추가) */}
-                  {Array.isArray(newQuotation.paymentTerms?.interims) && newQuotation.paymentTerms.interims.map((amt, idx) => (
+                  {Array.isArray(newQuotation.paymentTerms?.interims) && newQuotation.paymentTerms.interims.map((amt: string, idx: number) => (
                     <div key={idx} className="flex items-center gap-2 mb-1">
                       <span className="w-16">중도금{idx + 1}</span>
                       <Input
@@ -480,7 +480,7 @@ export const CompanyForm: React.FC<{
                           ...prev,
                           paymentTerms: {
                             ...prev.paymentTerms,
-                            interims: prev.paymentTerms.interims.map((v, i) => i === idx ? e.target.value.replace(/[^\d]/g, '') : v)
+                            interims: prev.paymentTerms.interims.map((v: string, i: number) => i === idx ? e.target.value.replace(/[^\d]/g, '') : v)
                           }
                         }))}
                         className="w-32"
@@ -489,7 +489,7 @@ export const CompanyForm: React.FC<{
                         ...prev,
                         paymentTerms: {
                           ...prev.paymentTerms,
-                          interims: prev.paymentTerms.interims.filter((_, i) => i !== idx)
+                          interims: prev.paymentTerms.interims.filter((_: string, i: number) => i !== idx)
                         }
                       }))}><TrashIcon className="w-4 h-4 text-red-400" /></Button>
                     </div>
@@ -522,7 +522,7 @@ export const CompanyForm: React.FC<{
                   지급 조건 합계: {
                     (() => {
                       const adv = Number(newQuotation.paymentTerms?.advance || 0);
-                      const ints = (newQuotation.paymentTerms?.interims || []).reduce((a, b) => a + Number(b || 0), 0);
+                      const ints = (newQuotation.paymentTerms?.interims || []).reduce((a: number, b: string) => a + Number(b || 0), 0);
                       const bal = Number(newQuotation.paymentTerms?.balance || 0);
                       return (adv + ints + bal).toLocaleString();
                     })()
@@ -534,7 +534,7 @@ export const CompanyForm: React.FC<{
                 {/* 유효성 안내 */}
                 {(() => {
                   const adv = Number(newQuotation.paymentTerms?.advance || 0);
-                  const ints = (newQuotation.paymentTerms?.interims || []).reduce((a, b) => a + Number(b || 0), 0);
+                  const ints = (newQuotation.paymentTerms?.interims || []).reduce((a: number, b: string) => a + Number(b || 0), 0);
                   const bal = Number(newQuotation.paymentTerms?.balance || 0);
                   const total = adv + ints + bal;
                   const discounted = newQuotation.quotationAmount && newQuotation.discountRate ?
@@ -611,7 +611,7 @@ export const CompanyForm: React.FC<{
                       if (!pt) return '-';
                       if (typeof pt === 'string') return pt;
                       const adv = pt.advance ? `선금: ${Number(pt.advance).toLocaleString()}원` : '';
-                      const ints = Array.isArray(pt.interims) && pt.interims.length > 0 ? pt.interims.map((v, i) => v ? `중도금${i + 1}: ${Number(v).toLocaleString()}원` : '').join(', ') : '';
+                      const ints = Array.isArray(pt.interims) && pt.interims.length > 0 ? pt.interims.map((v: string, i: number) => v ? `중도금${i + 1}: ${Number(v).toLocaleString()}원` : '').join(', ') : '';
                       const bal = pt.balance ? `잔금: ${Number(pt.balance).toLocaleString()}원` : '';
                       return [adv, ints, bal].filter(Boolean).join(', ');
                     })()}
@@ -723,7 +723,7 @@ export const CompanyForm: React.FC<{
                       const pt = c.paymentTerms;
                       if (typeof pt === 'string') return `, 지급조건: ${pt}`;
                       const adv = pt.advance ? `선금: ${Number(pt.advance).toLocaleString()}원` : '';
-                      const ints = Array.isArray(pt.interims) && pt.interims.length > 0 ? pt.interims.map((v, i) => v ? `중도금${i + 1}: ${Number(v).toLocaleString()}원` : '').join(', ') : '';
+                      const ints = Array.isArray(pt.interims) && pt.interims.length > 0 ? pt.interims.map((v: string, i: number) => v ? `중도금${i + 1}: ${Number(v).toLocaleString()}원` : '').join(', ') : '';
                       const bal = pt.balance ? `잔금: ${Number(pt.balance).toLocaleString()}원` : '';
                       return [adv, ints, bal].filter(Boolean).length > 0 ? `, 지급조건: ${[adv, ints, bal].filter(Boolean).join(', ')}` : '';
                     })() : ''}
