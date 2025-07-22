@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Company, Meeting, Task, TaskStatus, Contact } from './types';
+import { Company, Meeting, Task, TaskStatus, Contact, Quotation, Contract, Study } from './types';
 import {
   PlusIcon, TrashIcon, PencilIcon, XMarkIcon, CalendarDaysIcon, UserCircleIcon, EnvelopeIcon, PhoneIcon, MapPinIcon, InformationCircleIcon, ClipboardDocumentListIcon, BeakerIcon, CalendarModernIcon, ChartBarIcon, ChartPieIcon
 } from './icons';
