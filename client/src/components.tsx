@@ -469,10 +469,10 @@ export const CompanyForm: React.FC<{
                       value={newQuotation.paymentTerms?.advance || ''}
                       onChange={e => setNewQuotation(prev => ({
                         ...prev,
-                        paymentTerms: {
+                        paymentTerms: (typeof prev.paymentTerms === 'object' && prev.paymentTerms !== null) ? {
                           ...prev.paymentTerms,
                           advance: e.target.value.replace(/[^\d]/g, '')
-                        }
+                        } : { advance: e.target.value.replace(/[^\d]/g, '') }
                       }))}
                       className="w-32"
                     />
@@ -486,28 +486,28 @@ export const CompanyForm: React.FC<{
                         value={amt}
                         onChange={e => setNewQuotation(prev => ({
                           ...prev,
-                          paymentTerms: {
+                          paymentTerms: (typeof prev.paymentTerms === 'object' && prev.paymentTerms !== null) ? {
                             ...prev.paymentTerms,
                             interims: prev.paymentTerms.interims.map((v: string, i: number) => i === idx ? e.target.value.replace(/[^\d]/g, '') : v)
-                          }
+                          } : { interims: [...(prev.paymentTerms?.interims || []), e.target.value.replace(/[^\d]/g, '')] }
                         }))}
                         className="w-32"
                       />
                       <Button type="button" size="sm" variant="ghost" onClick={() => setNewQuotation(prev => ({
                         ...prev,
-                        paymentTerms: {
+                        paymentTerms: (typeof prev.paymentTerms === 'object' && prev.paymentTerms !== null) ? {
                           ...prev.paymentTerms,
                           interims: prev.paymentTerms.interims.filter((_: string, i: number) => i !== idx)
-                        }
+                        } : { interims: (prev.paymentTerms?.interims || []).filter((_: string, i: number) => i !== idx) }
                       }))}><TrashIcon className="w-4 h-4 text-red-400" /></Button>
                     </div>
                   ))}
                   <Button type="button" size="sm" variant="secondary" className="mb-2" onClick={() => setNewQuotation(prev => ({
                     ...prev,
-                    paymentTerms: {
+                    paymentTerms: (typeof prev.paymentTerms === 'object' && prev.paymentTerms !== null) ? {
                       ...prev.paymentTerms,
                       interims: [...(prev.paymentTerms?.interims || []), '']
-                    }
+                    } : { interims: [...(prev.paymentTerms?.interims || []), ''] }
                   }))}>+ 중도금 추가</Button>
                   <div className="flex items-center gap-2 mb-1">
                     <span className="w-16">잔금</span>
@@ -516,10 +516,10 @@ export const CompanyForm: React.FC<{
                       value={newQuotation.paymentTerms?.balance || ''}
                       onChange={e => setNewQuotation(prev => ({
                         ...prev,
-                        paymentTerms: {
+                        paymentTerms: (typeof prev.paymentTerms === 'object' && prev.paymentTerms !== null) ? {
                           ...prev.paymentTerms,
                           balance: e.target.value.replace(/[^\d]/g, '')
-                        }
+                        } : { balance: e.target.value.replace(/[^\d]/g, '') }
                       }))}
                       className="w-32"
                     />
