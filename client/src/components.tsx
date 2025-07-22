@@ -13,7 +13,8 @@ export const Button: React.FC<{
   onClick?: () => void;
   className?: string;
   type?: 'button' | 'submit' | 'reset';
-}> = ({ children, variant = 'primary', size = 'md', onClick, className = '', type = 'button' }) => {
+  disabled?: boolean;
+}> = ({ children, variant = 'primary', size = 'md', onClick, className = '', type = 'button', disabled }) => {
   const baseClasses = 'inline-flex items-center justify-center rounded-md font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none ring-offset-background';
 
   const variantClasses = {
@@ -33,6 +34,7 @@ export const Button: React.FC<{
       type={type}
       className={`${baseClasses} ${variantClasses[variant]} ${sizeClasses[size]} ${className}`}
       onClick={onClick}
+      disabled={disabled}
     >
       {children}
     </button>
