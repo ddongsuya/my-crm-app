@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, ReactNode, ReactElement } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Company, Meeting, Task, TaskStatus, View, NotificationItem, Contact, Quotation, Contract, Study, User } from './types';
 import {
   Button, Card, Input, Textarea, Select, Modal, CompanyForm, MeetingForm, TaskForm, GanttChartRenderer, StatCard, UpcomingItemCard, QuotationForm, ContractForm
@@ -1900,6 +1900,13 @@ function App() {
       )}
     </div>
   );
+
+  // App 함수 내부에 아래 더미 함수 추가 (호출부 인자 개수와 일치)
+  const handleUpdateQuotation = async (id?: any, data?: any) => { };
+  const handleCreateQuotation = async (data?: any) => { };
+  const handleUpdateContract = async (id?: any, data?: any) => { };
+  const handleCreateContract = async (data?: any) => { };
+  const handleDeleteStudy = async (id?: any) => { };
 
   return (
     <div className="flex min-h-screen bg-gray-50">
